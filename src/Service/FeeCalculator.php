@@ -19,6 +19,7 @@ class FeeCalculator implements TransactionCalculatorInterface
     public const PRIVATE_WITHDRAW_FEE_RATE = 0.003;
     public const PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT = '1000';
     public const PRIVATE_WITHDRAW_FREE_TRANSACTIONS_LIMIT = 3;
+    public const ALL_OPERATIONS_FREE_TRANSACTIONS_LIMIT = 5;
 
     /**
      * @var CurrencyHolder
@@ -44,14 +45,16 @@ class FeeCalculator implements TransactionCalculatorInterface
      * @return string
      * @throws NoCurrencyRateException
      */
-    public function calculate(Transaction $transaction)
+    public function calculate(Transaction $transaction): string
     {
         $userId = $transaction->getUser()->getId();
 
-        if (empty($this->transactions[$userId])) {
+        if (!isset($this->transactions[$userId])) {
             $this->transactions[$userId]['amount'] = new Money('0', $this->currencyHolder->getBaseCurrency());
             $this->transactions[$userId]['prev_tx_count'] = 0;
+            $this->transactions[$userId]['all_tx_count'] = 0;
         }
+
         /** @var Money $prevTransactionsAmount */
         $prevTransactionsAmount = $this->transactions[$userId]['amount'];
         $amountInBaseCurrency = $this->currencyHolder->exchange(
@@ -61,6 +64,11 @@ class FeeCalculator implements TransactionCalculatorInterface
         $amountSum = $amountInBaseCurrency->add($prevTransactionsAmount);
 
         switch (true) {
+            case $this->transactions[$userId]['all_tx_count'] < self::ALL_OPERATIONS_FREE_TRANSACTIONS_LIMIT:
+                $sumForFee = new Money('0', $this->currencyHolder->getBaseCurrency());
+                $feeRate = 0;
+                $this->transactions[$userId]['all_tx_count'] += 1;
+                break;
             case $transaction->isDeposit():
                 $sumForFee = $transaction->getPayment();
                 $feeRate = self::DEPOSIT_FEE_RATE;
@@ -100,7 +108,7 @@ class FeeCalculator implements TransactionCalculatorInterface
                 $this->transactions[$userId]['prev_tx_count'] += 1;
                 break;
             default:
-                $sumForFee = 0;
+                $sumForFee = new Money();
                 $feeRate = 0;
                 break;
         }
@@ -127,6 +135,9 @@ class FeeCalculator implements TransactionCalculatorInterface
 
     public function clear(): void
     {
-        $this->transactions = [];
+        foreach ($this->transactions as $key => $item) {
+            $this->transactions[$key]['amount'] = new Money('0', $this->currencyHolder->getBaseCurrency());
+            $this->transactions[$key]['prev_tx_count'] = 0;
+        }
     }
 }

@@ -65,12 +65,9 @@ class FeeCalculatorTest extends TestCase
      */
     public function transactionProvider(): Generator
     {
-        yield [new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')), 0.60];
-        yield [new Transaction('2016-01-05',new User (1,'private'),'deposit',new Money(200.00,'EUR')), 0.06];
-        yield [new Transaction('2016-01-06',new User (2,'business'),'withdraw',new Money(300.00,'EUR')), 1.5];
+        yield [new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'USD')), 0.00];
         yield [new Transaction('2016-01-10',new User (3,'private'),'withdraw',new Money(1000.00,'EUR')), 0.00];
-        yield [new Transaction('2016-01-10',new User (2,'business'),'deposit',new Money(10000.00,'EUR')), 3.00];
-        yield [new Transaction('2016-02-19',new User (5,'private'),'withdraw',new Money(3000000,'JPY')), 8612];
+        yield [new Transaction('2016-02-19',new User (5,'private'),'withdraw',new Money(3000000,'JPY')), 0];
     }
 
     /**
