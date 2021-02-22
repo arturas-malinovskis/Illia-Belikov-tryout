@@ -16,7 +16,8 @@
     "require": {
         "php": ">=7.2",
         "ext-bcmath": "*",
-        "ext-json": "*"
+        "ext-json": "*",
+        "evp/money": "^2.4"
     },
     "require-dev": {
         "phpunit/phpunit": "^6.5",

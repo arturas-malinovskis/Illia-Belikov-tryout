@@ -6,9 +6,11 @@ namespace App\Tests\Service;
 
 use App\Exception\DataRetrievalException;
 use App\DataHolder\CurrencyHolder;
+use App\Exception\NoCurrencyRateException;
 use App\Model\Transaction;
 use App\Model\User;
 use App\Service\FeeCalculator;
+use Evp\Component\Money\Money;
 use Generator;
 use PHPUnit\Framework\TestCase;
 
@@ -37,6 +39,7 @@ class FeeCalculatorTest extends TestCase
     /**
      * @param $transaction
      * @param $expectation
+     * @throws NoCurrencyRateException
      *
      * @dataProvider transactionProvider
      */
@@ -48,14 +51,13 @@ class FeeCalculatorTest extends TestCase
 
     /**
      * @param $amount
-     * @param $currency
      * @param $expectation
      *
      * @dataProvider roundUpAndFormatProvider
      */
-    public function testRoundUpAndFormat($amount, $currency, $expectation)
+    public function testRoundUpAndFormat($amount, $expectation)
     {
-        $this->assertSame($expectation, $this->calculator->roundUpAndFormat($amount, $currency));
+        $this->assertSame($expectation, $this->calculator->roundUpAndFormat($amount, $amount->getCurrency()));
     }
 
     /**
@@ -63,12 +65,12 @@ class FeeCalculatorTest extends TestCase
      */
     public function transactionProvider(): Generator
     {
-        yield [new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', 1200.00, 'EUR'), 0.60];
-        yield [new Transaction('2016-01-05',new User (1,'private'),'deposit',200.00,'EUR'), 0.06];
-        yield [new Transaction('2016-01-06',new User (2,'business'),'withdraw',300.00,'EUR'), 1.5];
-        yield [new Transaction('2016-01-10',new User (3,'private'),'withdraw',1000.00,'EUR'), 0.00];
-        yield [new Transaction('2016-01-10',new User (2,'business'),'deposit',10000.00,'EUR'), 3.00];
-        yield [new Transaction('2016-02-19',new User (5,'private'),'withdraw',3000000,'JPY'), 8612];
+        yield [new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')), 0.60];
+        yield [new Transaction('2016-01-05',new User (1,'private'),'deposit',new Money(200.00,'EUR')), 0.06];
+        yield [new Transaction('2016-01-06',new User (2,'business'),'withdraw',new Money(300.00,'EUR')), 1.5];
+        yield [new Transaction('2016-01-10',new User (3,'private'),'withdraw',new Money(1000.00,'EUR')), 0.00];
+        yield [new Transaction('2016-01-10',new User (2,'business'),'deposit',new Money(10000.00,'EUR')), 3.00];
+        yield [new Transaction('2016-02-19',new User (5,'private'),'withdraw',new Money(3000000,'JPY')), 8612];
     }
 
     /**
@@ -76,18 +78,18 @@ class FeeCalculatorTest extends TestCase
      */
     public function roundUpAndFormatProvider(): Generator
     {
-        yield [0.6, 'EUR', '0.60'];
-        yield [3, 'EUR', '3.00'];
-        yield [0, 'EUR', '0.00'];
-        yield [0.06, 'EUR', '0.06'];
-        yield [1.5, 'EUR', '1.50'];
-        yield [0, 'JPY', '0'];
-        yield [0.6948, 'EUR', '0.70'];
-        yield [0.2999, 'USD', '0.30'];
-        yield [0.3, 'EUR', '0.30'];
-        yield [3, 'EUR', '3.00'];
-        yield [0, 'EUR', '0.00'];
-        yield [0, 'EUR', '0.00'];
-        yield [8611.4099, 'JPY', '8612'];
+        yield [new Money(0.6, 'EUR'), '0.60'];
+        yield [new Money(3, 'EUR'), '3.00'];
+        yield [new Money(0, 'EUR'), '0.00'];
+        yield [new Money(0.06, 'EUR'), '0.06'];
+        yield [new Money(1.5, 'EUR'), '1.50'];
+        yield [new Money(0, 'JPY'), '0'];
+        yield [new Money(0.6948, 'EUR'), '0.70'];
+        yield [new Money(0.2999, 'USD'), '0.30'];
+        yield [new Money(0.3, 'EUR'), '0.30'];
+        yield [new Money(3, 'EUR'), '3.00'];
+        yield [new Money(0, 'EUR'), '0.00'];
+        yield [new Money(0, 'EUR'), '0.00'];
+        yield [new Money(8611.4099, 'JPY'), '8612'];
     }
 }

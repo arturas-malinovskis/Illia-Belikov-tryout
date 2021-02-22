@@ -6,7 +6,7 @@ namespace App\Adapter;
 
 use App\Exception\DateFormatException;
 use App\Exception\InvalidTransactionException;
-use App\Exception\InvalidUserTypeException;
+use App\Exception\InvalidUserDataException;
 use App\Exception\OpeningFileException;
 use App\Model\Transaction;
 use App\Model\User;
@@ -15,6 +15,7 @@ use App\Validator\DateFormatValidator;
 use App\Validator\TransactionValidator;
 use App\Validator\UserValidator;
 use DateTime;
+use Evp\Component\Money\Money;
 
 /**
  * Class CsvFileDataAdapter
@@ -49,7 +50,7 @@ class CsvFileDataAdapter implements DataAdapterInterface
         $transactionsArray = [];
 
         while (($data = fgetcsv($this->source)) !== false) {
-            $transactionUser = $this->createUser((int)$data[1], $data[2]);
+            $transactionUser = $this->createUser($data[1], $data[2]);
             $transaction = $this->createTransaction($data);
             $transaction->setUser($transactionUser);
 
@@ -62,15 +63,22 @@ class CsvFileDataAdapter implements DataAdapterInterface
         return $transactionsArray;
     }
 
-    private function createUser(int $id, string $type): User
+    private function createUser(string $id, string $type): User
     {
-        $transactionUser = new User($id, $type);
+        if (!ctype_digit($id)) {
+            $exception = new InvalidUserDataException(
+                sprintf("User ID is incorrect (%s)", $id),
+                InvalidUserDataException::ID_ERROR
+            );
+            Output::writeException($exception);
+        }
+
+        $transactionUser = new User((int)$id, $type);
 
         try {
             UserValidator::validate($transactionUser);
-        } catch (InvalidUserTypeException $exception) {
-            Output::write($exception->getMessage());
-            exit((string)$exception->getCode());
+        } catch (InvalidUserDataException $exception) {
+            Output::writeException($exception);
         }
 
         return $transactionUser;
@@ -83,21 +91,21 @@ class CsvFileDataAdapter implements DataAdapterInterface
         try {
             DateFormatValidator::validate($dateString, 'Y-m-d');
         } catch (DateFormatException $exception) {
-            Output::write($exception->getMessage());
-            exit((string)$exception->getCode());
+            Output::writeException($exception);
         }
 
         $transaction = new Transaction();
         $transaction->setDate(DateTime::createFromFormat('Y-m-d', $dateString));
         $transaction->setType($data[3]);
-        $transaction->setAmount((float)$data[4]);
-        $transaction->setCurrencyCode($data[5]);
+        $payment = new Money();
+        $payment->setAmount($data[4]);
+        $payment->setCurrency($data[5]);
+        $transaction->setPayment($payment);
 
         try {
             TransactionValidator::validate($transaction);
         } catch (InvalidTransactionException $exception) {
-            Output::write($exception->getMessage());
-            exit((string)$exception->getCode());
+            Output::writeException($exception);
         }
 
         return $transaction;

@@ -6,6 +6,7 @@ namespace App\Model;
 
 use DateTime;
 use DateTimeInterface;
+use Evp\Component\Money\Money;
 
 class Transaction
 {
@@ -28,27 +29,20 @@ class Transaction
     protected $type;
 
     /**
-     * @var float
+     * @var Money
      */
-    protected $amount;
-
-    /**
-     * @var string
-     */
-    protected $currencyCode;
+    protected $payment;
 
     public function __construct(
         string $date = null,
         ?User $user = null,
         string $type = null,
-        float $amount = null,
-        string $currency = null
+        Money $payment = null
     ) {
         $this->date = DateTime::createFromFormat('Y-m-d', $date ?? '');
         $this->user = $user;
         $this->type = $type;
-        $this->amount = $amount;
-        $this->currencyCode = $currency;
+        $this->payment = $payment;
     }
 
     /**
@@ -100,19 +94,24 @@ class Transaction
     }
 
     /**
-     * @return float
+     * @return Money
      */
-    public function getAmount(): float
+    public function getPayment(): Money
     {
-        return $this->amount;
+        return $this->payment;
     }
 
     /**
-     * @param float $amount
+     * @param Money $payment
      */
-    public function setAmount(float $amount)
+    public function setPayment(Money $payment): void
     {
-        $this->amount = $amount;
+        $this->payment = $payment;
+    }
+
+    public function getAmount()
+    {
+        return $this->payment->getAmount();
     }
 
     /**
@@ -120,15 +119,7 @@ class Transaction
      */
     public function getCurrencyCode(): string
     {
-        return $this->currencyCode;
-    }
-
-    /**
-     * @param string $currencyCode
-     */
-    public function setCurrencyCode(string $currencyCode)
-    {
-        $this->currencyCode = $currencyCode;
+        return $this->payment->getCurrency();
     }
 
     public function isDeposit(): bool

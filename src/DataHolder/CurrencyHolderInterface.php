@@ -2,6 +2,8 @@
 
 namespace App\DataHolder;
 
+use Evp\Component\Money\Money;
+
 interface CurrencyHolderInterface
 {
     /**
@@ -13,28 +15,12 @@ interface CurrencyHolderInterface
     public function getRate(string $currencyCode): ?float;
 
     /**
-     * Returns the precision of rounding by currency code
-     *
-     * @param string $currency
-     * @return int
-     */
-    public function getPrecision(string $currency): int;
-
-    /**
      * Returns the equivalent of the amount in base currency
      *
-     * @param float $amount
+     * @param Money $money
      * @param string $currencyCode
-     * @return float
+     * @param bool $inBaseCurrency
+     * @return Money
      */
-    public function exchangeToBase(float $amount, string $currencyCode): float;
-
-    /**
-     * Returns the equivalent of the amount in the target (not base) currency.
-     *
-     * @param float $amount
-     * @param string $currencyCode
-     * @return float
-     */
-    public function exchangeFromBase(float $amount, string $currencyCode): float;
+    public function exchange(Money $money, string $currencyCode, bool $inBaseCurrency = true): Money;
 }

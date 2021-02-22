@@ -36,8 +36,7 @@ class TransactionManager implements TransactionManagerInterface
                 try {
                     $fees[] = $this->calculator->calculate($transaction);
                 } catch (NoCurrencyRateException $exception) {
-                    Output::write($exception->getMessage());
-                    exit((string)$exception->getCode());
+                    Output::writeException($exception);
                 }
             }
         }

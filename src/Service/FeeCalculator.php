@@ -4,11 +4,11 @@ declare(strict_types=1);
 
 namespace App\Service;
 
-use App\Exception\DataRetrievalException;
 use App\DataHolder\CurrencyHolder;
 use App\DataHolder\CurrencyHolderInterface;
 use App\Exception\NoCurrencyRateException;
 use App\Model\Transaction;
+use Evp\Component\Money\Money;
 
 class FeeCalculator implements TransactionCalculatorInterface
 {
@@ -17,7 +17,7 @@ class FeeCalculator implements TransactionCalculatorInterface
     public const BUSINESS_WITHDRAW_FEE_RATE = 0.005;
 
     public const PRIVATE_WITHDRAW_FEE_RATE = 0.003;
-    public const PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT = 1000;
+    public const PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT = '1000';
     public const PRIVATE_WITHDRAW_FREE_TRANSACTIONS_LIMIT = 3;
 
     /**
@@ -44,51 +44,59 @@ class FeeCalculator implements TransactionCalculatorInterface
      * @return string
      * @throws NoCurrencyRateException
      */
-    public function calculate(Transaction $transaction): string
+    public function calculate(Transaction $transaction)
     {
         $userId = $transaction->getUser()->getId();
 
         if (empty($this->transactions[$userId])) {
-            $this->transactions[$userId]['amount'] = 0;
+            $this->transactions[$userId]['amount'] = new Money('0', $this->currencyHolder->getBaseCurrency());
             $this->transactions[$userId]['prev_tx_count'] = 0;
         }
-
+        /** @var Money $prevTransactionsAmount */
         $prevTransactionsAmount = $this->transactions[$userId]['amount'];
-        $amountInBaseCurrency = $this->currencyHolder
-            ->exchangeToBase($transaction->getAmount(), $transaction->getCurrencyCode());
-        $amountSum = $amountInBaseCurrency + $prevTransactionsAmount;
+        $amountInBaseCurrency = $this->currencyHolder->exchange(
+            $transaction->getPayment(),
+            $transaction->getPayment()->getCurrency()
+        );
+        $amountSum = $amountInBaseCurrency->add($prevTransactionsAmount);
 
         switch (true) {
             case $transaction->isDeposit():
-                $sumForFee = $transaction->getAmount();
-                $feeRate = FeeCalculator::DEPOSIT_FEE_RATE;
+                $sumForFee = $transaction->getPayment();
+                $feeRate = self::DEPOSIT_FEE_RATE;
                 break;
             case $transaction->getUser()->isBusiness():
-                $sumForFee = $transaction->getAmount();
-                $feeRate = FeeCalculator::BUSINESS_WITHDRAW_FEE_RATE;
+                $sumForFee = $transaction->getPayment();
+                $feeRate = self::BUSINESS_WITHDRAW_FEE_RATE;
                 break;
-            case $this->transactions[$userId]['prev_tx_count'] > FeeCalculator::PRIVATE_WITHDRAW_FREE_TRANSACTIONS_LIMIT:
+            case $this->transactions[$userId]['prev_tx_count'] > self::PRIVATE_WITHDRAW_FREE_TRANSACTIONS_LIMIT:
                 $sumForFee = $amountInBaseCurrency;
-                $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FEE_RATE;
+                $feeRate = self::PRIVATE_WITHDRAW_FEE_RATE;
                 break;
-            case $prevTransactionsAmount < FeeCalculator::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT:
+            case $prevTransactionsAmount->isLt(
+                new Money(self::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT, $this->currencyHolder->getBaseCurrency())
+            ):
 
-                if ($amountSum >= FeeCalculator::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT) {
-                    $sumForFee = $amountSum - FeeCalculator::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT;
-                    $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FEE_RATE;
+                if ($amountSum >= self::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT) {
+                    $sumForFee = $amountSum->sub(
+                        new Money(self::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT, $this->currencyHolder->getBaseCurrency())
+                    );
+                    $feeRate = self::PRIVATE_WITHDRAW_FEE_RATE;
                 } else {
                     $sumForFee = 0;
                     $feeRate = 0;
                 }
 
-                $this->transactions[$userId]['amount'] += $amountInBaseCurrency;
+                $this->transactions[$userId]['amount'] = $prevTransactionsAmount->add($amountInBaseCurrency);
                 $this->transactions[$userId]['prev_tx_count'] += 1;
                 break;
-            case $amountSum >= FeeCalculator::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT:
+            case $amountSum->isGte(
+                new Money(self::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT, $this->currencyHolder->getBaseCurrency())
+            ):
                 $sumForFee = $amountInBaseCurrency;
-                $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FEE_RATE;
+                $feeRate = self::PRIVATE_WITHDRAW_FEE_RATE;
 
-                $this->transactions[$userId]['amount'] += $amountInBaseCurrency;
+                $this->transactions[$userId]['amount'] = $prevTransactionsAmount->add($amountInBaseCurrency);
                 $this->transactions[$userId]['prev_tx_count'] += 1;
                 break;
             default:
@@ -97,30 +105,24 @@ class FeeCalculator implements TransactionCalculatorInterface
                 break;
         }
 
-        $fee = $this->currencyHolder->exchangeFromBase(
-            $sumForFee * $feeRate,
-            $transaction->getCurrencyCode()
+        $fee = $this->currencyHolder->exchange(
+            $sumForFee->mul($feeRate),
+            $transaction->getCurrencyCode(),
+            false
         );
 
         return $this->roundUpAndFormat($fee, $transaction->getCurrencyCode());
     }
 
-    /**
-     * @param float $amount
-     * @param string $currency
-     * @return string
-     */
-    public function roundUpAndFormat(float $amount, string $currency): string
+    public function roundUpAndFormat(Money $fee, string $currency): string
     {
-        $precision = $this->currencyHolder->getPrecision($currency);
-        if ($precision === 0) {
-            $amount = ceil($amount);
-        } else {
-            $ceilPrecision = pow(10, $precision);
-            $amount = ceil($amount * $ceilPrecision) / $ceilPrecision;
+        if ($fee->isNegative()) {
+            return '0';
         }
+        $precision = Money::getFraction($currency);
+        $fee = $fee->ceil($precision);
 
-        return number_format($amount, $precision, '.', '');
+        return $fee->getAmount();
     }
 
     public function clear(): void

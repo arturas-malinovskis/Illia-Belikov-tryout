@@ -2,9 +2,7 @@
 
 declare(strict_types=1);
 
-
 namespace App\Tests\Service;
-
 
 use App\DataHolder\CurrencyHolder;
 use App\Exception\DataRetrievalException;
@@ -13,6 +11,7 @@ use App\Model\User;
 use App\Service\FeeCalculator;
 use App\Service\TransactionManager;
 use App\Service\TransactionManagerInterface;
+use Evp\Component\Money\Money;
 use Generator;
 use PHPUnit\Framework\TestCase;
 
@@ -62,8 +61,8 @@ class TransactionManagerTest extends TestCase
         yield [
             'test 1' => [
                 [
-                    new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', 1200.00, 'EUR'),
-                    new Transaction('2015-01-01', new User (4, 'private'), 'withdraw', 1000.00, 'EUR')
+                    new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')),
+                    new Transaction('2015-01-01', new User (4, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
                 ]
             ],
             'expectations' => implode(
@@ -75,15 +74,15 @@ class TransactionManagerTest extends TestCase
         yield [
             'test 2' => [
                 [
-                    new Transaction('2016-01-05', new User (4, 'private'), 'withdraw', 1000.00, 'EUR'),
-                    new Transaction('2016-01-05', new User (1, 'private'), 'deposit', 200.00, 'EUR'),
-                    new Transaction('2016-01-06', new User (2, 'business'), 'withdraw', 300.00, 'EUR'),
-                    new Transaction('2016-01-06', new User (1, 'private'), 'withdraw', 30000, 'JPY'),
-                    new Transaction('2016-01-07', new User (1, 'private'), 'withdraw', 1000.00, 'EUR'),
-                    new Transaction('2016-01-07', new User (1, 'private'), 'withdraw', 100.00, 'USD'),
-                    new Transaction('2016-01-10', new User (1, 'private'), 'withdraw', 100.00, 'EUR'),
-                    new Transaction('2016-01-10', new User (2, 'business'), 'deposit', 10000.00, 'EUR'),
-                    new Transaction('2016-01-10', new User (3, 'private'), 'withdraw', 1000.00, 'EUR'),
+                    new Transaction('2016-01-05', new User (4, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
+                    new Transaction('2016-01-05', new User (1, 'private'), 'deposit', new Money(200.00, 'EUR')),
+                    new Transaction('2016-01-06', new User (2, 'business'), 'withdraw', new Money(300.00, 'EUR')),
+                    new Transaction('2016-01-06', new User (1, 'private'), 'withdraw', new Money(30000, 'JPY')),
+                    new Transaction('2016-01-07', new User (1, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
+                    new Transaction('2016-01-07', new User (1, 'private'), 'withdraw', new Money(100.00, 'USD')),
+                    new Transaction('2016-01-10', new User (1, 'private'), 'withdraw', new Money(100.00, 'EUR')),
+                    new Transaction('2016-01-10', new User (2, 'business'), 'deposit', new Money(10000.00, 'EUR')),
+                    new Transaction('2016-01-10', new User (3, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
                 ]
             ],
             'expectations' => implode(
@@ -96,13 +95,13 @@ class TransactionManagerTest extends TestCase
         yield [
             'test 3' => [
                 [
-                    new Transaction('2016-02-15', new User (1, 'private'), 'withdraw', 300.00, 'EUR'),
-                    new Transaction('2016-02-19', new User (5, 'private'), 'withdraw', 3000000, 'JPY')
+                    new Transaction('2016-02-15', new User (1, 'private'), 'withdraw', new Money(300.00, 'EUR')),
+                    new Transaction('2016-02-19', new User (5, 'private'), 'withdraw', new Money(3000000, 'JPY')),
                 ]
             ],
             'expectations' => implode(
                     PHP_EOL,
-                    ['0.00', '8612']
+                    ['0', '8612']
                 ) . PHP_EOL,
         ];
     }

@@ -7,6 +7,8 @@ namespace App\Tests\Holder;
 use App\Exception\DataRetrievalException;
 use App\DataHolder\CurrencyHolder;
 use App\DataHolder\CurrencyHolderInterface;
+use App\Exception\NoCurrencyRateException;
+use Evp\Component\Money\Money;
 use Generator;
 use PHPUnit\Framework\TestCase;
 
@@ -42,38 +44,19 @@ class CurrencyHolderTest extends TestCase
     }
 
     /**
-     * @param $currency
-     * @param $precision
+     * @param Money $amount
+     * @param Money $expectation
+     * @param bool $inBaseCurrency
+     * @throws NoCurrencyRateException
      *
-     * @dataProvider getPrecisionProvider
+     * @dataProvider exchangeProvider
      */
-    public function testGetPrecision($currency, $precision)
+    public function testExchange(Money $amount, Money $expectation, bool $inBaseCurrency)
     {
-        $this->assertEquals($precision, $this->holder->getPrecision($currency));
-    }
-
-    /**
-     * @param $amount
-     * @param $currency
-     * @param $expectation
-     *
-     * @dataProvider exchangeToBaseProvider
-     */
-    public function testExchangeToBase($currency, $amount, $expectation)
-    {
-        $this->assertEquals($expectation, $this->holder->exchangeToBase($amount, $currency));
-    }
-
-    /**
-     * @param $amount
-     * @param $currency
-     * @param $expectation
-     *
-     * @dataProvider exchangeFromBaseProvider
-     */
-    public function testExchangeFromBase($currency, $amount, $expectation)
-    {
-        $this->assertEquals($expectation, $this->holder->exchangeFromBase($amount, $currency));
+        $this->assertEquals(
+            $expectation->getAmountInCents(),
+            $this->holder->exchange($amount, $amount->getCurrency(), $inBaseCurrency)->getAmountInCents()
+        );
     }
 
     /**
@@ -89,30 +72,14 @@ class CurrencyHolderTest extends TestCase
     /**
      * @return Generator
      */
-    public function getPrecisionProvider(): Generator
+    public function exchangeProvider(): Generator
     {
-        yield ['EUR', 2];
-        yield ['USD', 2];
-        yield ['JPY', 0];
-    }
+        yield [new Money('1', 'EUR'), new Money('1', 'EUR'), true];
+        yield [new Money('1.1497', 'USD'), new Money('1', 'EUR'), true];
+        yield [new Money('129.53', 'JPY'), new Money('1', 'EUR'), true];
 
-    /**
-     * @return Generator
-     */
-    public function exchangeToBaseProvider(): Generator
-    {
-        yield ['EUR', 1, 1];
-        yield ['USD', 1.1497, 1];
-        yield ['JPY', 129.53, 1];
-    }
-
-    /**
-     * @return Generator
-     */
-    public function exchangeFromBaseProvider(): Generator
-    {
-        yield ['EUR', 1, 1];
-        yield ['USD', 1, 1.1497];
-        yield ['JPY', 1, 129.53];
+        yield [new Money('1', 'EUR'), new Money('1', 'EUR'), false];
+        yield [new Money('1', 'USD'), new Money('1.1497', 'EUR'), false];
+        yield [new Money('1', 'JPY'), new Money('129.53', 'EUR'), false];
     }
 }
