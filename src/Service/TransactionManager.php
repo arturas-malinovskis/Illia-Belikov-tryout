@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Service;
 
+use App\Exception\NoCurrencyRateException;
 use App\Utils\Output;
 
 class TransactionManager implements TransactionManagerInterface
@@ -32,7 +33,11 @@ class TransactionManager implements TransactionManagerInterface
         $fees = [];
         foreach ($this->transactionsArray as $weekArray) {
             foreach ($weekArray as $transaction) {
-                $fees[] = $this->calculator->calculate($transaction);;
+                try {
+                    $fees[] = $this->calculator->calculate($transaction);
+                } catch (NoCurrencyRateException $exception) {
+                    Output::writeException($exception);
+                }
             }
         }
         $this->calculator->clear();
