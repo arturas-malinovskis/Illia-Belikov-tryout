@@ -7,15 +7,16 @@ namespace App\Service;
 use App\Exception\DataRetrievalException;
 use App\DataHolder\CurrencyHolder;
 use App\DataHolder\CurrencyHolderInterface;
+use App\Exception\NoCurrencyRateException;
 use App\Model\Transaction;
 
 class FeeCalculator implements TransactionCalculatorInterface
 {
     public const DEPOSIT_FEE_RATE = 0.0003;
 
-    public const BUSINESS_WITHDRAW_FREE_RATE = 0.005;
+    public const BUSINESS_WITHDRAW_FEE_RATE = 0.005;
 
-    public const PRIVATE_WITHDRAW_FREE_RATE = 0.003;
+    public const PRIVATE_WITHDRAW_FEE_RATE = 0.003;
     public const PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT = 1000;
     public const PRIVATE_WITHDRAW_FREE_TRANSACTIONS_LIMIT = 3;
 
@@ -39,7 +40,9 @@ class FeeCalculator implements TransactionCalculatorInterface
     }
 
     /**
-     * @inheritDoc
+     * @param Transaction $transaction
+     * @return string
+     * @throws NoCurrencyRateException
      */
     public function calculate(Transaction $transaction): string
     {
@@ -62,17 +65,17 @@ class FeeCalculator implements TransactionCalculatorInterface
                 break;
             case $transaction->getUser()->isBusiness():
                 $sumForFee = $transaction->getAmount();
-                $feeRate = FeeCalculator::BUSINESS_WITHDRAW_FREE_RATE;
+                $feeRate = FeeCalculator::BUSINESS_WITHDRAW_FEE_RATE;
                 break;
             case $this->transactions[$userId]['prev_tx_count'] > FeeCalculator::PRIVATE_WITHDRAW_FREE_TRANSACTIONS_LIMIT:
                 $sumForFee = $amountInBaseCurrency;
-                $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FREE_RATE;
+                $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FEE_RATE;
                 break;
             case $prevTransactionsAmount < FeeCalculator::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT:
 
                 if ($amountSum >= FeeCalculator::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT) {
                     $sumForFee = $amountSum - FeeCalculator::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT;
-                    $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FREE_RATE;
+                    $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FEE_RATE;
                 } else {
                     $sumForFee = 0;
                     $feeRate = 0;
@@ -83,7 +86,7 @@ class FeeCalculator implements TransactionCalculatorInterface
                 break;
             case $amountSum >= FeeCalculator::PRIVATE_WITHDRAW_FREE_AMOUNT_LIMIT:
                 $sumForFee = $amountInBaseCurrency;
-                $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FREE_RATE;
+                $feeRate = FeeCalculator::PRIVATE_WITHDRAW_FEE_RATE;
 
                 $this->transactions[$userId]['amount'] += $amountInBaseCurrency;
                 $this->transactions[$userId]['prev_tx_count'] += 1;

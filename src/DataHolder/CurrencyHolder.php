@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\DataHolder;
 
 use App\Exception\DataRetrievalException;
+use App\Exception\NoCurrencyRateException;
 
 class CurrencyHolder implements CurrencyHolderInterface
 {
@@ -46,9 +47,13 @@ class CurrencyHolder implements CurrencyHolderInterface
     /**
      * @inheritDoc
      */
-    public function getRate(string $currencyCode): float
+    public function getRate(string $currencyCode): ?float
     {
-        return $this->rates[$currencyCode] ?? 1;
+        if (isset($this->rates[$currencyCode])) {
+            return $this->rates[$currencyCode];
+        }
+
+        return null;
     }
 
     /**
@@ -60,20 +65,38 @@ class CurrencyHolder implements CurrencyHolderInterface
     }
 
     /**
-     * @inheritDoc
+     * @param float $amount
+     * @param string $currencyCode
+     * @return float
+     * @throws NoCurrencyRateException
      */
     public function exchangeToBase(float $amount, string $currencyCode): float
     {
         $rate = $this->getRate($currencyCode);
-        return (float) bcdiv((string) $amount, (string) $rate, 4);
+        if ($rate === null) {
+            throw new NoCurrencyRateException(
+                sprintf("No currency rate for %s", $currencyCode),
+                NoCurrencyRateException::WRONG_CURRENCY_CODE_ERROR
+            );
+        }
+        return (float)bcdiv((string)$amount, (string)$rate, 4);
     }
 
     /**
-     * @inheritDoc
+     * @param float $amount
+     * @param string $currencyCode
+     * @return float
+     * @throws NoCurrencyRateException
      */
     public function exchangeFromBase(float $amount, string $currencyCode): float
     {
         $rate = $this->getRate($currencyCode);
-        return (float) bcmul((string) $amount, (string) $rate, 4);
+        if ($rate === null) {
+            throw new NoCurrencyRateException(
+                sprintf("No currency rate for %s", $currencyCode),
+                NoCurrencyRateException::WRONG_CURRENCY_CODE_ERROR
+            );
+        }
+        return (float)bcmul((string)$amount, (string)$rate, 4);
     }
 }

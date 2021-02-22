@@ -10,7 +10,7 @@ interface CurrencyHolderInterface
      * @param string $currencyCode
      * @return float
      */
-    public function getRate(string $currencyCode): float;
+    public function getRate(string $currencyCode): ?float;
 
     /**
      * Returns the precision of rounding by currency code
