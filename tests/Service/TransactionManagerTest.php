@@ -62,12 +62,17 @@ class TransactionManagerTest extends TestCase
             'test 1' => [
                 [
                     new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')),
+                    new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')),
+                    new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')),
+                    new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')),
+                    new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')),
+                    new Transaction('2014-12-31', new User (4, 'private'), 'withdraw', new Money(1200.00, 'EUR')),
                     new Transaction('2015-01-01', new User (4, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
                 ]
             ],
             'expectations' => implode(
                     PHP_EOL,
-                    ['0.60', '3.00']
+                    ['0.00', '0.00', '0.00', '0.00', '0.00', '0.60', '3.00']
                 ) . PHP_EOL,
         ];
 
@@ -76,6 +81,16 @@ class TransactionManagerTest extends TestCase
                 [
                     new Transaction('2016-01-05', new User (4, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
                     new Transaction('2016-01-05', new User (1, 'private'), 'deposit', new Money(200.00, 'EUR')),
+                    new Transaction('2016-01-05', new User (1, 'private'), 'deposit', new Money(200.00, 'EUR')),
+                    new Transaction('2016-01-05', new User (1, 'private'), 'deposit', new Money(200.00, 'EUR')),
+                    new Transaction('2016-01-05', new User (1, 'private'), 'deposit', new Money(200.00, 'EUR')),
+                    new Transaction('2016-01-05', new User (1, 'private'), 'deposit', new Money(200.00, 'EUR')),
+                    new Transaction('2016-01-05', new User (1, 'private'), 'deposit', new Money(200.00, 'EUR')),
+                    new Transaction('2016-01-06', new User (2, 'business'), 'withdraw', new Money(300.00, 'EUR')),
+                    new Transaction('2016-01-06', new User (2, 'business'), 'withdraw', new Money(300.00, 'EUR')),
+                    new Transaction('2016-01-06', new User (2, 'business'), 'withdraw', new Money(300.00, 'EUR')),
+                    new Transaction('2016-01-06', new User (2, 'business'), 'withdraw', new Money(300.00, 'EUR')),
+                    new Transaction('2016-01-06', new User (2, 'business'), 'withdraw', new Money(300.00, 'EUR')),
                     new Transaction('2016-01-06', new User (2, 'business'), 'withdraw', new Money(300.00, 'EUR')),
                     new Transaction('2016-01-06', new User (1, 'private'), 'withdraw', new Money(30000, 'JPY')),
                     new Transaction('2016-01-07', new User (1, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
@@ -83,11 +98,16 @@ class TransactionManagerTest extends TestCase
                     new Transaction('2016-01-10', new User (1, 'private'), 'withdraw', new Money(100.00, 'EUR')),
                     new Transaction('2016-01-10', new User (2, 'business'), 'deposit', new Money(10000.00, 'EUR')),
                     new Transaction('2016-01-10', new User (3, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
+                    new Transaction('2016-01-10', new User (3, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
+                    new Transaction('2016-01-10', new User (3, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
+                    new Transaction('2016-01-10', new User (3, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
+                    new Transaction('2016-01-10', new User (3, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
+                    new Transaction('2016-01-10', new User (3, 'private'), 'withdraw', new Money(1000.00, 'EUR')),
                 ]
             ],
             'expectations' => implode(
                     PHP_EOL,
-                    ['0.00', '0.06', '1.50', '0', '0.70', '0.30', '0.30', '3.00', '0.00']
+                    ['0.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.06', '0.00', '0.00', '0.00', '0.00', '0.00', '1.50', '0', '0.70', '0.30', '0.30', '3.00', '0.00', '0.00', '0.00', '0.00', '0.00', '0.00']
                 ) . PHP_EOL,
 
         ];
@@ -95,13 +115,17 @@ class TransactionManagerTest extends TestCase
         yield [
             'test 3' => [
                 [
-                    new Transaction('2016-02-15', new User (1, 'private'), 'withdraw', new Money(300.00, 'EUR')),
+                    new Transaction('2016-02-19', new User (5, 'private'), 'withdraw', new Money(3000000, 'JPY')),
+                    new Transaction('2016-02-19', new User (5, 'private'), 'withdraw', new Money(3000000, 'JPY')),
+                    new Transaction('2016-02-19', new User (5, 'private'), 'withdraw', new Money(3000000, 'JPY')),
+                    new Transaction('2016-02-19', new User (5, 'private'), 'withdraw', new Money(3000000, 'JPY')),
+                    new Transaction('2016-02-19', new User (5, 'private'), 'withdraw', new Money(3000000, 'JPY')),
                     new Transaction('2016-02-19', new User (5, 'private'), 'withdraw', new Money(3000000, 'JPY')),
                 ]
             ],
             'expectations' => implode(
                     PHP_EOL,
-                    ['0', '8612']
+                    ['0', '0', '0', '0', '0', '8612']
                 ) . PHP_EOL,
         ];
     }
